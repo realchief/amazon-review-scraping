@@ -15,9 +15,10 @@ class SiteProductItem(Item):
 
 class AmazonReviewScraper (scrapy.Spider):
     name = "scrapingdata"
-    allowed_domains = ['www.baseball-reference.com']
-    DOMAIN_URL = 'https://www.baseball-reference.com'
-    START_URL = 'https://www.baseball-reference.com/leagues/MLB/2017-schedule.shtml'
+    allowed_domains = ['www.amazon.com']
+    DOMAIN_URL = 'https://www.amazon.com'
+    START_URL = 'https://www.amazon.com/Transformers-Last-Knight-Mark-Wahlberg/product-reviews/B07215NWRL' \
+                '/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews'
 
     def __init__(self, **kwargs):
         self.headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)"
@@ -25,17 +26,17 @@ class AmazonReviewScraper (scrapy.Spider):
 
     def start_requests(self):
         yield Request(url=self.START_URL,
-                      callback=self.get_boxscore_urls,
+                      callback=self.get_page_urls,
                       headers=self.headers,
                       dont_filter=True
                       )
 
-    def get_boxscore_urls(self, response):
+    def get_page_urls(self, response):
 
-        boxscore_urls = response.xpath('//p[@class="game"]/em/a/@href').extract()
+        page_urls = response.xpath('//div[@class="a-row"]/a[@class="a-link-normal"]/@href').extract()
 
-        for boxscore_url in boxscore_urls:
-            url = self.DOMAIN_URL + boxscore_url
+        for page_url in page_urls:
+            url = self.DOMAIN_URL + page_url
             yield Request(url=url,
                           callback=self.parse_detail,
                           dont_filter=True,
