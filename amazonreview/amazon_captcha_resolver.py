@@ -6,6 +6,7 @@ from PIL import Image
 import pytesseract
 import urllib
 
+
 def get_captcha_temp_root():
     temp_root = os.path.dirname(os.path.realpath(__file__))
     temp_root = os.path.join(temp_root, "temp")
@@ -18,11 +19,14 @@ def get_captcha_temp_root():
 
     return ""
 
+
 pytesseract.pytesseract.tesseract_cmd = "C:\\Program Files (x86)\\Tesseract-OCR\\tesseract"
 captcha_resolve_temp_root = get_captcha_temp_root()
 
+
 def get_file_title(path):
     return os.path.splitext(path)[0]
+
 
 def captcha_solver(path, threshold=245):
     image = cv2.imread(path)
@@ -82,6 +86,7 @@ def captcha_solver(path, threshold=245):
         string = ""
 
     return string
+
 
 def resolve_captcha(url):
     captcha_string = ""

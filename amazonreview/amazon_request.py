@@ -107,7 +107,25 @@ class AmazonProductsSpider(object):
         product = {}
         if not self.page.navigate_to(url):
             return
-        self.page
+
+        assert_urls = self.page.tree.xpath('//div[@class="a-row"]//a[@class="a-link-normal"]/@href')
+        page_urls = []
+        for assert_url in assert_urls:
+            page_url = 'https://www.amazon.com' + assert_url
+            page_urls.append(page_url)
+
+        for page_url in page_urls:
+            page_content = HttpRequest().get(page_url)
+            page_content_tree = html.fromstring(page_content)
+
+            comment = page_content_tree.xpath(
+                '//span[@class="a-size-base review-text review-text-content"]/span/text()')[0]
+
+            name = page_content_tree.xpath(
+                '//span[@class="a-profile-name"]//text()')[0]
+
+            rating = page_content_tree.xpath('//i[@data-hook="review-star-rating"]/span/text()')[0].split(' ')[0]
+            date = page_content_tree.xpath('//span[@data-hook="review-date"]//text()')[0]
 
 
 if __name__ == '__main__':
