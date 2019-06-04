@@ -98,7 +98,7 @@ class AmazonPage(object):
 
 class ProductItem(Item):
     comment = Field()
-    name = Field()
+    writer_name = Field()
     rating = Field()
     date = Field()
     movie_name = Field()
@@ -121,7 +121,7 @@ class AmazonProductsSpider(scrapy.Spider):
 
     def parse(self, response):
 
-        for page_num in range(0, 138):
+        for page_num in range(0, 5):
             url = self.START_URL + '&pageNumber=' + str(page_num)
 
             if not self.page.navigate_to(url):
@@ -146,10 +146,10 @@ class AmazonProductsSpider(scrapy.Spider):
                     comment = ''
 
                 try:
-                    name = page_content_tree.xpath(
+                    writer_name = page_content_tree.xpath(
                         '//span[@class="a-profile-name"]//text()')[0]
                 except:
-                    name = ''
+                    writer_name = ''
 
                 try:
                     rating = page_content_tree.xpath('//i[@data-hook="review-star-rating"]/span/text()')[0].split(' ')[0]
@@ -162,7 +162,7 @@ class AmazonProductsSpider(scrapy.Spider):
                     date = ''
 
                 product['comment'] = comment
-                product['name'] = name
+                product['writer_name'] = writer_name
                 product['rating'] = rating
                 product['date'] = date
 
