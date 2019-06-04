@@ -107,67 +107,96 @@ class ProductItem(Item):
 class AmazonProductsSpider(scrapy.Spider):
     name = "scrapingdata"
     allowed_domains = ['www.amazon.com']
-    START_URL = 'https://www.amazon.com/Transformers-Last-Knight-Mark-Wahlberg/product-reviews/B07215NWRL' \
-                '/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews'
+    DOMAIN_URL = 'https://www.amazon.com'
+    START_URL = 'https://www.amazon.com/b/ref=sv_atv_2?node=2858905011&ie=UTF8'
+    MOVIE_URL = 'https://www.amazon.com/Transformers-Last-Knight-Mark-Wahlberg/dp/B07215NWRL' \
+                '/ref=cm_cr_arp_d_product_top?ie=UTF8'
+    REVIEW_URL = 'https://www.amazon.com/Transformers-Last-Knight-Mark-Wahlberg/product-reviews/B07215NWRL' \
+                 '/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews'
 
     def __init__(self):
         self.page = AmazonPage()
 
     def start_requests(self):
         yield Request(url=self.START_URL,
-                      callback=self.parse,
+                      callback=self.get_movie_url,
                       dont_filter=True
                       )
 
+    def get_movie_url(self, response):
+        assert_movie_urls = response.xpath('//div[@id="Storefront"]'
+                                           '//div[@class="DigitalVideoWebNodeStorefront_Card__Packshot DigitalVideoWeb'
+                                           'NodeStorefront_Card__PlaceholderBackground"]/a/@href').extract()
+        for assert_movie_url in assert_movie_urls:
+
+            if 'video/detail' in assert_movie_url:
+                movie_url = self.DOMAIN_URL + assert_movie_url
+
+                yield Request(url=movie_url,
+                              callback=self.parse,
+                              dont_filter=True
+                              )
+
     def parse(self, response):
 
-        for page_num in range(0, 5):
-            url = self.START_URL + '&pageNumber=' + str(page_num)
+        assert_review_url = response.xpath('//a[@data-hook="see-all-reviews-link-foot"]/@href').extract()
+        if assert_review_url:
+            review_url = self.DOMAIN_URL + assert_review_url[0]
 
-            if not self.page.navigate_to(url):
-                return
+            for page_num in range(0, 5):
+                url = review_url + '&pageNumber=' + str(page_num)
 
-            assert_urls = self.page.tree.xpath('//div[@class="a-row"]//a[@class="a-link-normal"]/@href')
-            page_urls = []
-            for assert_url in assert_urls:
-                page_url = 'https://www.amazon.com' + assert_url
-                page_urls.append(page_url)
+                if not self.page.navigate_to(url):
+                    return
 
-            for page_url in page_urls:
-                page_content = HttpRequest().get(page_url)
-                page_content_tree = html.fromstring(page_content)
+                assert_urls = self.page.tree.xpath('//div[@class="a-row"]//a[@class="a-link-normal"]/@href')
+                page_urls = []
+                for assert_url in assert_urls:
+                    page_url = 'https://www.amazon.com' + assert_url
+                    page_urls.append(page_url)
 
-                product = ProductItem()
+                for page_url in page_urls:
+                    page_content = HttpRequest().get(page_url)
+                    page_content_tree = html.fromstring(page_content)
 
-                try:
-                    comment = page_content_tree.xpath(
-                        '//span[@class="a-size-base review-text review-text-content"]/span/text()')[0]
-                except:
-                    comment = ''
+                    product = ProductItem()
 
-                try:
-                    writer_name = page_content_tree.xpath(
-                        '//span[@class="a-profile-name"]//text()')[0]
-                except:
-                    writer_name = ''
+                    try:
+                        movie_name = page_content_tree.xpath(
+                                '//a[@data-hook="product-link"]/text()')[0]
+                    except:
+                        movie_name = ''
 
-                try:
-                    rating = page_content_tree.xpath('//i[@data-hook="review-star-rating"]/span/text()')[0].split(' ')[0]
-                except:
-                    rating = ''
+                    try:
+                        comment = page_content_tree.xpath(
+                            '//span[@class="a-size-base review-text review-text-content"]/span/text()')[0]
+                    except:
+                        comment = ''
 
-                try:
-                    date = page_content_tree.xpath('//span[@data-hook="review-date"]//text()')[0]
-                except:
-                    date = ''
+                    try:
+                        writer_name = page_content_tree.xpath(
+                            '//span[@class="a-profile-name"]//text()')[0]
+                    except:
+                        writer_name = ''
 
-                product['comment'] = comment
-                product['writer_name'] = writer_name
-                product['rating'] = rating
-                product['date'] = date
+                    try:
+                        rating = page_content_tree.xpath('//i[@data-hook="review-star-rating"]/span/text()')[0].split(' ')[0]
+                    except:
+                        rating = ''
 
-                if comment:
-                    yield product
+                    try:
+                        date = page_content_tree.xpath('//span[@data-hook="review-date"]//text()')[0]
+                    except:
+                        date = ''
+
+                    product['comment'] = comment
+                    product['writer_name'] = writer_name
+                    product['rating'] = rating
+                    product['date'] = date
+                    product['movie_name'] = movie_name
+
+                    if comment:
+                        yield product
 
 
 # if __name__ == '__main__':
