@@ -2,12 +2,14 @@ import requests
 import time
 import random
 
+
 def load_user_agents():
     try:
         with open('user_agents.txt', 'r') as fp:
             return [str(line).strip() for line in fp.readlines()]
     except:
         return []
+
 
 class HttpRequest(object):
     default_headers = {
